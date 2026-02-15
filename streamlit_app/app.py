@@ -51,7 +51,13 @@ st.sidebar.header("📝 Transaction Details")
 st.sidebar.markdown("Enter transaction info below:")
 
 txn_type = st.sidebar.selectbox("Transaction Type", ["TRANSFER", "CASH_OUT"])
-step = st.sidebar.slider("Hour (step)", min_value=1, max_value=744, value=1, help="Hour of the month (1-744)")
+
+# User-friendly time input instead of raw "step"
+st.sidebar.markdown("**Transaction Time**")
+day = st.sidebar.number_input("Day of Month", min_value=1, max_value=30, value=1)
+hour = st.sidebar.slider("Hour of Day", min_value=0, max_value=23, value=2, format="%d:00")
+step = (day - 1) * 24 + hour  # Convert to step internally
+
 amount = st.sidebar.number_input("Amount ($)", min_value=0.01, value=200000.0, step=1000.0)
 oldbalanceOrg = st.sidebar.number_input("Origin Balance (Before)", min_value=0.0, value=200000.0, step=1000.0)
 newbalanceOrig = st.sidebar.number_input("Origin Balance (After)", min_value=0.0, value=0.0, step=1000.0)
@@ -70,14 +76,18 @@ legit_btn = col_s2.button("✅ Legit", use_container_width=True)
 
 if suspicious_btn:
     txn_type = "TRANSFER"
-    step, amount = 2, 350000
+    day, hour = 1, 2
+    step = (day - 1) * 24 + hour
+    amount = 350000
     oldbalanceOrg, newbalanceOrig = 350000, 0
     oldbalanceDest, newbalanceDest = 0, 350000
     analyze_btn = True
 
 if legit_btn:
     txn_type = "CASH_OUT"
-    step, amount = 12, 500
+    day, hour = 1, 12
+    step = (day - 1) * 24 + hour
+    amount = 500
     oldbalanceOrg, newbalanceOrig = 10000, 9500
     oldbalanceDest, newbalanceDest = 50000, 50500
     analyze_btn = True
@@ -97,6 +107,16 @@ if analyze_btn:
 
     with st.spinner("Analyzing transaction..."):
         result = predict_with_explanation(transaction, model=model, explainer=explainer)
+
+    # --- Transaction Summary ---
+    st.subheader("💳 Transaction Analyzed")
+    t1, t2, t3, t4 = st.columns(4)
+    t1.metric("Type", transaction["type"])
+    t2.metric("Amount", f"${transaction['amount']:,.2f}")
+    t3.metric("Time", f"Day {transaction['step'] // 24 + 1}, {transaction['step'] % 24}:00")
+    t4.metric("Balance Change", f"${transaction['oldbalanceOrg']:,.0f} → ${transaction['newbalanceOrig']:,.0f}")
+
+    st.divider()
 
     # --- Result Banner ---
     if result["risk_level"] == "HIGH":
