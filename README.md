@@ -1,10 +1,10 @@
 # 🔍 FraudLens
-
+![CI](https://github.com/srujankothuri/FraudLens/actions/workflows/ci.yml/badge.svg)
 **Explainable Credit Card Fraud Detection System**
 
 A production-ready fraud detection pipeline that doesn't just predict fraud — it **explains WHY** each transaction is suspicious using interactive SHAP visualizations.
 
-> 🚀 **Live Demo:** _Coming soon_
+> 🚀 **[Live Demo](https://fraudlens-srujankothuri.streamlit.app/)**
 
 ---
 
