@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (too large for git)
+data/raw/*.csv
+data/processed/*.csv
+
+# Model artifacts (tracked via releases or DVC if needed)
+models/*.joblib
+models/*.pkl
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
