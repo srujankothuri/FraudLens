@@ -5,12 +5,9 @@ of WHY the model flagged (or cleared) a transaction.
 """
 
 import shap
-import numpy as np
 import pandas as pd
-import joblib
-from pathlib import Path
 
-from src.models.train import MODEL_PATH, load_model
+from src.models.train import load_model
 from src.features.engineering import create_transaction_features, encode_categorical
 
 
@@ -186,6 +183,6 @@ if __name__ == "__main__":
     print(f"\nPrediction: {result['prediction_label']}")
     print(f"Fraud Probability: {result['fraud_probability']}")
     print(f"Risk Level: {result['risk_level']}")
-    print(f"\nTop Reasons:")
+    print("\nTop Reasons:")
     for reason in result["top_reasons"]:
         print(f"  → {reason['impact']}")

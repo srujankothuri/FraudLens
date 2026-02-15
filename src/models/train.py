@@ -5,7 +5,6 @@ Trains XGBoost with SMOTE oversampling for class imbalance.
 
 import json
 import joblib
-import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn.metrics import (
@@ -99,7 +98,7 @@ def evaluate_model(
     print(f"Fraud Precision: {metrics['fraud_precision']}")
     print(f"Fraud Recall:    {metrics['fraud_recall']}")
     print(f"Fraud F1:        {metrics['fraud_f1']}")
-    print(f"\nConfusion Matrix:")
+    print("\nConfusion Matrix:")
     print(f"  TN={cm[0][0]:,}  FP={cm[0][1]:,}")
     print(f"  FN={cm[1][0]:,}  TP={cm[1][1]:,}")
 

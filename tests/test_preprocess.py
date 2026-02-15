@@ -2,7 +2,6 @@
 
 import pytest
 import pandas as pd
-import numpy as np
 from src.data.preprocess import clean_data, split_data
 
 
@@ -76,7 +75,6 @@ class TestSplitData:
         df = clean_data(sample_raw_data)
         _, _, y_train, y_test = split_data(df, test_size=0.5)
         # Both splits should contain fraud cases
-        original_rate = df["isFraud"].mean()
         # With small data, exact match is unlikely, just check both have fraud
         assert y_train.sum() > 0 or y_test.sum() > 0
 
