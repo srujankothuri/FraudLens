@@ -25,9 +25,9 @@ env/
 data/raw/*.csv
 data/processed/*.csv
 
-# Model artifacts (tracked via releases or DVC if needed)
-models/*.joblib
-models/*.pkl
+# Model artifacts (large models should use Git LFS)
+# Our model is only 1.3MB so we track it directly
+# models/*.joblib
 
 # OS
 .DS_Store
