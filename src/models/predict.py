@@ -5,9 +5,12 @@ of WHY the model flagged (or cleared) a transaction.
 """
 
 import shap
+import numpy as np
 import pandas as pd
+import joblib
+from pathlib import Path
 
-from src.models.train import load_model
+from src.models.train import MODEL_PATH, load_model
 from src.features.engineering import create_transaction_features, encode_categorical
 
 
@@ -145,6 +148,78 @@ def predict_batch(
     return results
 
 
+def predict_batch_df(
+    df: pd.DataFrame,
+    model=None,
+) -> pd.DataFrame:
+    """
+    Score an entire DataFrame of transactions.
+    Returns the original data with prediction columns appended.
+    Optimized for batch — computes SHAP for all rows at once.
+    """
+    if model is None:
+        model = load_model()
+
+    required_cols = ["step", "type", "amount", "oldbalanceOrg",
+                     "newbalanceOrig", "oldbalanceDest", "newbalanceDest"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {missing}")
+
+    # Filter to valid transaction types
+    valid_mask = df["type"].isin(["TRANSFER", "CASH_OUT"])
+    df_valid = df[valid_mask].copy()
+    df_invalid = df[~valid_mask].copy()
+
+    if len(df_valid) == 0:
+        raise ValueError("No TRANSFER or CASH_OUT transactions found in the data.")
+
+    # Feature engineering for all rows at once
+    from src.features.engineering import create_transaction_features, encode_categorical
+    X = create_transaction_features(df_valid[required_cols])
+    X = encode_categorical(X)
+
+    for col in TRAINING_FEATURES:
+        if col not in X.columns:
+            X[col] = 0
+    X = X[TRAINING_FEATURES]
+
+    # Batch predict
+    predictions = model.predict(X)
+    probabilities = model.predict_proba(X)[:, 1]
+
+    # Batch SHAP
+    explainer = get_shap_explainer(model)
+    shap_values = explainer.shap_values(X)
+
+    # Find top risk feature for each row
+    top_features = []
+    for i in range(len(X)):
+        feat_idx = int(np.argmax(np.abs(shap_values[i])))
+        top_features.append(TRAINING_FEATURES[feat_idx])
+
+    # Build result DataFrame
+    df_valid["prediction"] = predictions
+    df_valid["prediction_label"] = ["FRAUD" if p == 1 else "LEGIT" for p in predictions]
+    df_valid["fraud_probability"] = [round(p, 4) for p in probabilities]
+    df_valid["risk_level"] = [
+        "HIGH" if p >= 0.7 else "MEDIUM" if p >= 0.3 else "LOW"
+        for p in probabilities
+    ]
+    df_valid["top_risk_feature"] = top_features
+
+    # Add invalid rows back with "SKIPPED" label
+    if len(df_invalid) > 0:
+        df_invalid["prediction"] = -1
+        df_invalid["prediction_label"] = "SKIPPED"
+        df_invalid["fraud_probability"] = None
+        df_invalid["risk_level"] = "N/A"
+        df_invalid["top_risk_feature"] = "N/A (invalid type)"
+        df_valid = pd.concat([df_valid, df_invalid], ignore_index=True)
+
+    return df_valid
+
+
 # --- SHAP visualization helpers (used by Streamlit app) ---
 
 def get_shap_waterfall_data(explanation_result: dict) -> dict:
@@ -183,6 +258,6 @@ if __name__ == "__main__":
     print(f"\nPrediction: {result['prediction_label']}")
     print(f"Fraud Probability: {result['fraud_probability']}")
     print(f"Risk Level: {result['risk_level']}")
-    print("\nTop Reasons:")
+    print(f"\nTop Reasons:")
     for reason in result["top_reasons"]:
         print(f"  → {reason['impact']}")
